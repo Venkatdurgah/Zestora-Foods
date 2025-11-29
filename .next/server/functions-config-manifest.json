@@ -1,0 +1,1 @@
+{"version":1,"functions":{"/api/admin/upload":{},"/api/stripe/webhook":{},"/account":{},"/account/orders":{},"/admin":{},"/admin/orders":{},"/admin/products":{},"/":{},"/product/[id]":{}}}

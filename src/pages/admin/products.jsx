@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react'
 import ProductForm from '@/components/ProductForm'
 import axios from 'axios'
+import { getSession } from 'next-auth/react'
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context)
+  if (!session || session.user?.role !== 'ADMIN') {
+    return {
+      redirect: {
+        destination: '/api/auth/signin',
+        permanent: false,
+      },
+    }
+  }
+  return { props: {} }
+}
 
 export default function AdminProducts(){
   const [products, setProducts] = useState([])
@@ -25,9 +39,13 @@ export default function AdminProducts(){
           <div className="space-y-3">
             {products.map(p=> (
               <div key={p.id} className="border p-3 rounded flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">{p.title}</div>
-                  <div className="text-sm">₹{(p.price/100).toFixed(2)}</div>
+                <div className="flex items-center gap-4">
+                  <img src={p.images?.[0]} className="w-20 h-20 object-cover rounded" />
+                  <div>
+                    <div className="font-semibold">{p.title}</div>
+                    <div className="text-sm">₹{(p.price/100).toFixed(2)}</div>
+                    <div className="text-sm">{p.inStock ? 'In stock' : 'Out of stock'}</div>
+                  </div>
                 </div>
                 <div className="space-x-2">
                   <button onClick={()=>setEditing(p)} className="px-3 py-1 border rounded">Edit</button>
