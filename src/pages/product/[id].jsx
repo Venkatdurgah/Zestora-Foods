@@ -10,6 +10,11 @@ export default function ProductPage({ product }) {
   const [selected, setSelected] = useState(0)
   if (!product) return <div>Not found</div>
 
+  // Normalize images: some products store images as JSON string in the DB
+  const images = Array.isArray(product.images)
+    ? product.images
+    : (typeof product.images === 'string' && product.images.length ? JSON.parse(product.images) : [])
+
   async function handleBuy() {
     setLoading(true)
     try {
@@ -45,15 +50,15 @@ export default function ProductPage({ product }) {
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <div className="rounded overflow-hidden">
-            <img src={product.images[selected]} alt={product.title} className="w-full h-96 object-cover rounded" />
+              <img src={images[selected]} alt={product.title} className="w-full h-96 object-cover rounded" />
           </div>
-          <div className="flex gap-2 mt-3">
-            {product.images.map((u,i)=> (
-              <button key={i} onClick={()=>setSelected(i)} className={`w-20 h-20 rounded overflow-hidden border ${i===selected? 'ring-2 ring-emerald-500':''}`}>
-                <img src={u} className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
+            <div className="flex gap-2 mt-3">
+              {images.map((u,i)=> (
+                <button key={i} onClick={()=>setSelected(i)} className={`w-20 h-20 rounded overflow-hidden border ${i===selected? 'ring-2 ring-emerald-500':''}`}>
+                  <img src={u} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
         </div>
         <div>
           <h1 className="text-3xl font-bold">{product.title}</h1>
@@ -75,7 +80,12 @@ export default function ProductPage({ product }) {
 
 export async function getServerSideProps(ctx) {
   const { id } = ctx.params
-  const res = await fetch(`${process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'http://localhost:3000'}/api/products/${id}`)
+  // Build a base URL dynamically from the request when possible so this works
+  // whether the dev server runs on :3000 or :3001.
+  const host = ctx.req.headers.host
+  const proto = ctx.req.headers['x-forwarded-proto'] || (ctx.req.connection && ctx.req.connection.encrypted ? 'https' : 'http')
+  const base = process.env.NEXT_PUBLIC_NEXTAUTH_URL || `${proto}://${host}`
+  const res = await fetch(`${base}/api/products/${id}`)
   if (res.status !== 200) return { props: { product: null } }
   const product = await res.json()
   return { props: { product } }

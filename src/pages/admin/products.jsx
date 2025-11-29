@@ -32,7 +32,7 @@ export default function AdminProducts(){
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h2 className="font-semibold mb-2">Create / Edit</h2>
-          <ProductForm product={editing} onSaved={()=>{ setEditing(null); load() }} />
+          <ProductForm key={editing?.id || 'new'} product={editing} onSaved={()=>{ setEditing(null); load() }} />
         </div>
         <div>
           <h2 className="font-semibold mb-2">All products</h2>

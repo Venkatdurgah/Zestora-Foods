@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 
 export default function ProductForm({ product, onSaved }) {
@@ -8,6 +8,18 @@ export default function ProductForm({ product, onSaved }) {
   const [images, setImages] = useState(product?.images || [])
   const [description, setDescription] = useState(product?.description || '')
   const [inStock, setInStock] = useState(product?.inStock ?? true)
+  const [saving, setSaving] = useState(false)
+
+  // Keep local form state in sync when `product` prop changes (editing a different product)
+  // without forcing a remount of the component.
+  useEffect(() => {
+    setTitle(product?.title || '')
+    setSlug(product?.slug || '')
+    setPrice(product?.price ? product.price/100 : 0)
+    setImages(product?.images || [])
+    setDescription(product?.description || '')
+    setInStock(product?.inStock ?? true)
+  }, [product])
 
   async function upload(file) {
     const fd = new FormData()
@@ -28,9 +40,24 @@ export default function ProductForm({ product, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     const payload = { title, slug, description, price: Math.round(Number(price)*100), images, inStock }
-    if (product) await axios.put(`/api/products/${product.id}`, payload)
-    else await axios.post('/api/products', payload)
-    onSaved?.()
+    setSaving(true)
+    try {
+      if (product) await axios.put(`/api/products/${product.id}`, payload)
+      else await axios.post('/api/products', payload)
+      onSaved?.()
+    } catch (err) {
+      console.error('Save product error', err)
+      const resp = err?.response?.data
+      if (resp && typeof resp === 'object') {
+        // If dev debug info returned from API, show it to help debugging
+        alert(`Failed to save product: ${resp.error || err.message}\n\nSession: ${JSON.stringify(resp.session || null)}`)
+      } else {
+        const message = resp?.error || err?.message || 'Save failed'
+        alert(`Failed to save product: ${message}`)
+      }
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -57,7 +84,8 @@ export default function ProductForm({ product, onSaved }) {
           <span>In stock</span>
         </label>
       </div>
-      <button className="px-4 py-2 bg-black text-white rounded">Save</button>
+      <button className="px-4 py-2 bg-black text-white rounded" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
     </form>
   )
 }
+
