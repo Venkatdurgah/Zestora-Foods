@@ -55,6 +55,10 @@ export default NextAuth({
   pages: {
     signIn: '/auth/signin',
   },
+  session: {
+    // Use Database-based Sessions
+    strategy: 'database',
+  },
   callbacks: {
     async session({ session, user }) {
       // Add role and id to the session object
