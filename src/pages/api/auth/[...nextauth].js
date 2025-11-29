@@ -1,6 +1,8 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import prisma from '@/lib/prisma'
 
 const providers = []
 
@@ -48,36 +50,17 @@ if (process.env.ENABLE_DEV_CREDENTIALS === 'true' || process.env.NODE_ENV !== 'p
 }
 
 export default NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers,
   pages: {
     signIn: '/auth/signin',
   },
   callbacks: {
-    async jwt({ token, user, profile, account }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-        // If user object provided a role (credentials provider), use it
-        if (user.role) token.role = user.role
-      }
-
-      // If this is an OAuth login, profile will exist — derive role from ADMIN_EMAILS
-      if (profile && profile.email) {
-        const adminEmails = (process.env.ADMIN_EMAILS || '')
-          .split(',')
-          .map(e => e.trim())
-          .filter(e => e.length > 0)
-        token.role = adminEmails.includes(profile.email) ? 'ADMIN' : 'CUSTOMER'
-      }
-
-      // Fallback to CUSTOMER if not set
-      if (!token.role) token.role = 'CUSTOMER'
-      return token
-    },
-    async session({ session, token }) {
+    async session({ session, user }) {
+      // Add role and id to the session object
       if (session?.user) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = user.id;
+        session.user.role = user.role; // The 'role' is already on the user model in the database
       }
       return session
     }
