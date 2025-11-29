@@ -54,7 +54,7 @@ export async function getServerSideProps(context) {
   if (!session || session.user?.role !== 'ADMIN') {
     return {
       redirect: {
-        destination: '/api/auth/signin',
+        destination: '/admin/login',
         permanent: false,
       },
     }

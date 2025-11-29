@@ -16,6 +16,9 @@ export default function Header() {
           {session ? (
             <>
               <Link href="/account/orders">My Orders</Link>
+              {session.user?.role === 'ADMIN' && (
+                <Link href="/admin" className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700">Admin</Link>
+              )}
               <button onClick={() => signOut()} className="px-3 py-1 border rounded">Sign out</button>
             </>
           ) : (
